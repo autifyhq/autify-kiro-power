@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "aximo": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@autifyhq/aximo-cli@0.13.0", "mcp"]
+    }
+  }
+}

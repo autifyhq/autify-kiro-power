@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Aximo: test the completed task",
+      "description": "When a spec task is marked complete, run its acceptance criteria as an Aximo end-to-end test.",
+      "trigger": "PostTaskExec",
+      "action": {
+        "type": "agent",
+        "prompt": "A spec task was just marked complete. Use the aximo test-what-you-built skill: find the task that just changed to [x] in .kiro/specs/*/tasks.md, collect its acceptance criteria, show me the Aximo prompt and ask before dispatching. One session for this task only."
+      }
+    }
+  ]
+}

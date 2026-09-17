@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+# aximo-testbox: a throwaway container with one Chrome that Aximo drives as a local
+# device, so a test of the app on this machine never touches your own screen.
+#
+#   aximo-testbox up          build (first time) and start the box; prints the live-view link
+#   aximo-testbox configure   hand the box your Aximo API key (reads ~/.aximo/config.json if present)
+#   aximo-testbox setup       register the box as a local device (once per box)
+#   aximo-testbox connect     start `aximo device connect` inside the box, detached
+#   aximo-testbox status      container, device, and connection state
+#   aximo-testbox url         the live-view (noVNC) link
+#   aximo-testbox logs        the device agent's output
+#   aximo-testbox down        stop and remove the container; keeps the profile and the key
+#   aximo-testbox reset       down, and drop the browser profile (forces a fresh sign-in)
+#   aximo-testbox prune       down, and drop everything: profile, key, device, image
+#
+# Env: AXIMO_TESTBOX_PORTS (default 3000), AXIMO_TESTBOX_BLOCK_HOSTS (comma list of hosts the
+# browser must refuse, e.g. your production domain), AXIMO_TESTBOX_NAME, AXIMO_BASE_URL,
+# AXIMO_VERSION (default latest), AXIMO_TESTBOX_NETWORK=host|bridge.
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+IMAGE_DIR="$HERE/../image"
+NAME="${AXIMO_TESTBOX_NAME:-aximo-testbox}"
+IMAGE="aximo-testbox:local"
+PORTS="${AXIMO_TESTBOX_PORTS:-3000}"
+NOVNC_PORT="${AXIMO_TESTBOX_NOVNC_PORT:-6080}"
+BASE_URL="${AXIMO_BASE_URL:-https://aximo.autify.com}"
+PROFILE_VOL="$NAME-profile"
+AXIMO_VOL="$NAME-aximo"
+NPM_VOL="$NAME-npm"
+
+die() { echo "aximo-testbox: $*" >&2; exit 1; }
+have() { command -v "$1" >/dev/null 2>&1; }
+running() { [ "$(docker inspect -f '{{.State.Running}}' "$NAME" 2>/dev/null)" = true ]; }
+exists() { docker inspect "$NAME" >/dev/null 2>&1; }
+
+# Docker Desktop (macOS, Windows) needs the mirror; a native Linux engine can share
+# the host network and skip it.
+detect_network() {
+  if [ -n "${AXIMO_TESTBOX_NETWORK:-}" ]; then echo "$AXIMO_TESTBOX_NETWORK"; return; fi
+  case "$(docker info -f '{{.OperatingSystem}}' 2>/dev/null)" in
+    *Desktop*|*desktop*) echo bridge ;;
+    *) [ "$(uname -s)" = Linux ] && echo host || echo bridge ;;
+  esac
+}
+
+vnc_pass() { docker exec "$NAME" cat /profile/.vncpass 2>/dev/null || true; }
+live_url() { echo "http://127.0.0.1:$NOVNC_PORT/vnc.html?autoconnect=1&resize=scale&password=$(vnc_pass)"; }
+
+cmd_up() {
+  have docker || die "docker is required (Docker Desktop on macOS/Windows, or a native engine on Linux)"
+  docker info >/dev/null 2>&1 || die "docker is installed but not running"
+  if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
+    echo "building the image (first time only, a few minutes)..."
+    docker build -q -t "$IMAGE" "$IMAGE_DIR" >/dev/null
+  fi
+  if running; then echo "already up"; echo "live view: $(live_url)"; return; fi
+  exists && docker rm -f "$NAME" >/dev/null
+  local net; net="$(detect_network)"
+  local net_args=(--network host)
+  [ "$net" = bridge ] && net_args=(--add-host=host.docker.internal:host-gateway -p "127.0.0.1:$NOVNC_PORT:$NOVNC_PORT")
+  # No repo mount: Aximo does not need your code. Capabilities dropped to what
+  # npm and X need. No new privileges.
+  docker run -d --name "$NAME" "${net_args[@]}" \
+    --cap-drop ALL --cap-add CHOWN --cap-add SETUID --cap-add SETGID --cap-add DAC_OVERRIDE --cap-add FOWNER \
+    --security-opt no-new-privileges \
+    --shm-size=2g \
+    -e AXIMO_TESTBOX_PORTS="$PORTS" -e AXIMO_TESTBOX_NETWORK="$net" -e AXIMO_TESTBOX_NOVNC_PORT="$NOVNC_PORT" \
+    -e AXIMO_TESTBOX_BLOCK_HOSTS="${AXIMO_TESTBOX_BLOCK_HOSTS:-}" -e AXIMO_VERSION="${AXIMO_VERSION:-latest}" \
+    -v "$PROFILE_VOL:/profile" -v "$AXIMO_VOL:/root/.aximo" -v "$NPM_VOL:/root/.npm" \
+    "$IMAGE" >/dev/null
+  local i
+  for i in $(seq 1 60); do
+    curl -sf --max-time 1 "http://127.0.0.1:$NOVNC_PORT/vnc.html" >/dev/null 2>&1 && break; sleep 0.5
+  done
+  running || die "the container died on startup; run: docker logs $NAME"
+  echo "up ($net network). Mirrored ports: $PORTS"
+  echo "live view: $(live_url)"
+  echo "installing aximo-cli in the background; 'aximo-testbox status' shows when it is ready"
+}
+
+await_aximo() {
+  local i
+  for i in $(seq 1 240); do
+    docker exec "$NAME" test -s /tmp/aximo.status 2>/dev/null && break; sleep 1
+  done
+  [ "$(docker exec "$NAME" cat /tmp/aximo.status 2>/dev/null)" = ok ] || die "aximo-cli did not install; run: docker exec $NAME cat /tmp/aximo-install.log"
+}
+
+cmd_configure() {
+  running || die "not up; run: aximo-testbox up"
+  await_aximo
+  local key="${AXIMO_API_KEY:-}"
+  if [ -z "$key" ] && [ -f "$HOME/.aximo/config.json" ]; then
+    key="$(node -e 'try{console.log(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).apiKey||"")}catch{}' "$HOME/.aximo/config.json" 2>/dev/null || true)"
+    [ -n "$key" ] && echo "using the API key from ~/.aximo/config.json"
+  fi
+  if [ -n "$key" ]; then
+    printf '%s' "$key" | docker exec -i "$NAME" bash -c 'aximo configure --base-url "$0" --api-key "$(cat)"' "$BASE_URL" >/dev/null \
+      && echo "configured against $BASE_URL"
+  else
+    docker exec -it "$NAME" aximo configure --base-url "$BASE_URL"
+  fi
+}
+
+cmd_setup() {
+  running || die "not up; run: aximo-testbox up"
+  await_aximo
+  local name="${1:-kiro-$(hostname -s 2>/dev/null || hostname)}"
+  docker exec -e DISPLAY=:99 "$NAME" aximo device setup --name "$name"
+}
+
+cmd_connect() {
+  running || die "not up; run: aximo-testbox up"
+  await_aximo
+  if docker exec "$NAME" pgrep -f 'aximo device connect' >/dev/null 2>&1; then echo "already connected"; return; fi
+  docker exec -d -e DISPLAY=:99 -e XAUTHORITY=/root/.Xauthority "$NAME" \
+    bash -c 'aximo device connect >> /tmp/device-connect.log 2>&1'
+  echo "connecting in the background; 'aximo-testbox status' confirms, 'aximo-testbox logs' follows"
+  echo "live view: $(live_url)"
+}
+
+cmd_status() {
+  if ! running; then echo "box: down"; return; fi
+  echo "box: up ($(docker inspect -f '{{index .Config.Env}}' "$NAME" | tr ' ' '\n' | grep AXIMO_TESTBOX_NETWORK | cut -d= -f2) network)"
+  echo "aximo-cli: $(docker exec "$NAME" cat /tmp/aximo.status 2>/dev/null || echo installing)"
+  if docker exec "$NAME" pgrep -f 'aximo device connect' >/dev/null 2>&1; then echo "connect: running"; else echo "connect: not running"; fi
+  docker exec "$NAME" aximo device status 2>/dev/null || echo "device: not configured or not registered"
+  echo "live view: $(live_url)"
+}
+
+cmd_url() { running || die "not up"; live_url; }
+cmd_logs() { running || die "not up"; docker exec "$NAME" tail -n "${1:-50}" -f /tmp/device-connect.log; }
+cmd_down() {
+  if running; then
+    docker exec "$NAME" pkill -INT -f 'aximo device connect' 2>/dev/null || true
+    sleep 1
+  fi
+  exists && docker rm -f "$NAME" >/dev/null; echo "down (profile and key kept)"
+}
+cmd_reset() { cmd_down; docker volume rm -f "$PROFILE_VOL" >/dev/null; echo "profile dropped; next sign-in starts fresh"; }
+cmd_prune() {
+  if running; then docker exec "$NAME" aximo device unregister 2>/dev/null || true; fi
+  cmd_down; docker volume rm -f "$PROFILE_VOL" "$AXIMO_VOL" "$NPM_VOL" >/dev/null; docker rmi -f "$IMAGE" >/dev/null 2>&1 || true
+  echo "everything removed"
+}
+
+case "${1:-help}" in
+  up) cmd_up ;; configure) cmd_configure ;; setup) shift; cmd_setup "$@" ;; connect) cmd_connect ;;
+  status) cmd_status ;; url) cmd_url ;; logs) shift; cmd_logs "$@" ;;
+  down) cmd_down ;; reset) cmd_reset ;; prune) cmd_prune ;;
+  help|-h|--help) sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//' ;;
+  *) die "unknown command: $1 (try: aximo-testbox help)" ;;
+esac
