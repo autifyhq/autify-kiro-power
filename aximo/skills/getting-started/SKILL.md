@@ -3,7 +3,7 @@ name: getting-started
 description: Set up Autify Aximo for this workspace. Use when the user installs the Aximo power, asks how to connect Aximo, hits an "Unauthorized" or "No API key configured" error from an aximo tool, or wants to register their machine as a local test device.
 metadata:
   author: Autify
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # Getting started with Aximo
@@ -17,9 +17,10 @@ workspace to the point where `test-what-you-built` can dispatch a run.
 Call `aximo_list_projects`.
 
 - Success: note the project list and continue to Step 3.
-- Error mentioning `Unauthorized` or `No API key configured`: go to Step 2.
-- The `aximo` server is missing from the tool list: the server refuses to start without a
-  key. Do Step 2 first, then ask the user to reload the power (Powers panel, Aximo, Reload).
+- Error `API key not configured` or `Unauthorized`: go to Step 2. The server starts
+  without a key and every tool answers with this error until one is set.
+- No `aximo_*` tools at all: the power did not load. Ask the user to reload it (Powers
+  panel, Aximo, Reload) and check Kiro's MCP log for the `aximo mcp` line.
 
 ## Step 2: Configure credentials
 
@@ -39,9 +40,9 @@ Tell the user, verbatim:
    ```
 
    Sandbox or on-prem users pass their own base URL.
-3. Reload the Aximo power in Kiro so the MCP server restarts.
 
-Then call `aximo_list_projects` again to verify. Do not ask the user to paste the key into
+Then call `aximo_list_projects` again to verify. No reload: the server reads the key on
+every call. Do not ask the user to paste the key into
 chat and do not write it into any file in the workspace.
 
 ## Step 3: Pick a project
@@ -65,9 +66,7 @@ this machine?"
      `docker info`; if it works, switch to the `local-device` skill and come back here
      when it reports the device online.
   2. **This machine itself** (no Docker). Aximo takes over the real screen for the length
-     of each run. Call `aximo_list_user_devices`. If that tool is not in your tool list
-     (aximo-cli 0.13.0 ships without it), ask the user to run
-     `npx -y @autifyhq/aximo-cli device status` and paste the output.
+     of each run. Call `aximo_list_user_devices`.
      - A desktop device with `status: "online"` exists: remember its `id`.
      - None: tell the user, verbatim:
 
@@ -94,7 +93,8 @@ Hooks are not loaded from a power. If the user wants a run to start automaticall
 spec task is marked complete, copy `hooks/aximo-test-on-task-complete.json` from this
 power into `.kiro/hooks/` (Kiro will ask for confirmation, that is expected). Explain
 that each hook-triggered run spends Aximo credits and Kiro credits, and that the hook
-only fires from the Kiro IDE task runner.
+only fires from the Kiro IDE task runner. Kiro's terminal version does not fire hooks:
+there, the user starts a test by saying "test what I built" or `/test-what-you-built`.
 
 ## Done
 

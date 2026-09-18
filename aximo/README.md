@@ -35,10 +35,10 @@ bare repository URL does not import.
 
 Requires Node.js 20.18 or newer on the PATH (the MCP server runs via `npx`).
 
-Known gap with the pinned `@autifyhq/aximo-cli@0.13.0`: the MCP server exposes 24
-tools and `aximo_list_user_devices` is not among them (it is on `main`, unreleased). The
-skills fall back to asking you for `aximo device status` output until the next release,
-when the pin should move.
+The skills are written for the aximo-cli release that carries `aximo_create_session`,
+`aximo_wait_for_session`, and `aximo_list_user_devices` (autifyhq/aximo-cli#79). Until
+`mcp.json` pins that release, the skills fall back to the saved-case path and to polling
+`aximo_get_session`.
 
 ## Authenticate
 
@@ -82,9 +82,14 @@ each run.
 
 ## Try it
 
-In Kiro chat: "test what I just built". The skill reads the completed task's
-`_Requirements_` references, builds a prompt from those criteria, runs one Aximo
-session, and reports PASS/FAIL per criterion with screenshots.
+In Kiro chat: "test what I just built", or tick a task in `tasks.md` with the hook from
+`hooks/` installed. The skill reads the completed task's `_Requirements_` references,
+builds a prompt from those criteria, shows you the criteria and the estimated cost, asks,
+runs one Aximo session, and reports PASS/FAIL per criterion with screenshots, the
+session link, and the live-view link.
+
+Kiro's terminal version cannot fire hooks. There, start a test by name:
+`/test-what-you-built`.
 
 ## Privacy and support
 

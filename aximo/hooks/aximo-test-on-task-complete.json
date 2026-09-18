@@ -7,7 +7,7 @@
       "trigger": "PostTaskExec",
       "action": {
         "type": "agent",
-        "prompt": "A spec task was just marked complete. Use the aximo test-what-you-built skill: find the task that just changed to [x] in .kiro/specs/*/tasks.md, collect its acceptance criteria, show me the Aximo prompt and ask before dispatching. One session for this task only."
+        "prompt": "A spec task was just marked complete. Use the aximo test-what-you-built skill: find the task that just changed to [x] in .kiro/specs/*/tasks.md, collect its acceptance criteria, show me the criteria, the target, and the estimated cost, and ask before dispatching. One session for this task only."
       }
     }
   ]
