@@ -1,5 +1,5 @@
 ---
-name: spec-to-plan
+name: aximo-spec-to-plan
 description: Turn a Kiro spec's requirements.md into an Aximo test plan. Use when the user asks to "create tests from the spec", "turn the acceptance criteria into a regression suite", or wants a plan that runs the whole feature against staging or localhost.
 metadata:
   author: Autify

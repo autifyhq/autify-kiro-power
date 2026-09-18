@@ -1,5 +1,5 @@
 ---
-name: test-what-you-built
+name: aximo-test-task
 description: Run a real end-to-end browser test of the spec task you just implemented. Use when the user says "test what I built", "test this task", "verify the acceptance criteria in the browser", after a spec task is marked complete, or when a hook asks for an Aximo run. Reads the task's acceptance criteria, runs them with Aximo, and reports the verdict with screenshots and the failure reasoning.
 metadata:
   author: Autify
@@ -17,7 +17,7 @@ collects. Never run it per file save.
 
 Every Aximo step costs credits. Follow all of these:
 
-1. One session per task. Do not test the whole spec; that is `spec-to-plan`.
+1. One session per task. Do not test the whole spec; that is `aximo-spec-to-plan`.
 2. Maximum two re-runs per task after a failure, then stop and report.
 3. Only user-observable criteria go into the prompt. Skip build, packaging, and
    internal-API criteria; say which ones you skipped.
@@ -50,22 +50,27 @@ Every Aximo step costs credits. Follow all of these:
 
 - **Target URL.** Ask if unknown. Default suggestion is `http://localhost:3000` when
   the workspace has a dev server script.
-- **Project.** Use the `projectId` chosen in `getting-started`, or `aximo_list_projects`.
+- **Project.** Use the `projectId` chosen in `aximo-setup`, or `aximo_list_projects`.
 - **Device, for a localhost URL.** Call `aximo_list_user_devices` and pick a desktop
   device with `status: "online"`. Prefer the testbox (`kiro-<hostname>`) over the
   developer's own machine.
 
   **None online.** Do not queue a run against an offline device: the run waits up to
-  30 minutes for the device and then errors, and that shows up as a stuck run. Offer
-  two ways forward and let the user pick:
+  30 minutes for the device and then errors, and that shows up as a stuck run. Do not
+  hand the user shell commands to run. Bring a device up yourself:
 
-  1. Bring a device up: the `local-device` skill (testbox) or `getting-started` Step 4.
-  2. A tunnel: put the dev app on a temporary public URL and let Aximo's cloud browser
-     open it. `cloudflared tunnel --url http://localhost:3000` or `ngrok http 3000`
-     (either tool installed on the machine) prints the URL. Say plainly that the dev app is reachable from the internet
-     while the tunnel is up, and that a login screen, if any, must be handled in the
-     prompt because nobody can sign in for the agent. Use the tunnel URL as `startUrl`
-     and skip `userDeviceId`.
+  1. Load the `aximo-testbox` skill now and do all of its steps. It checks Docker, asks
+     the user once, brings up the container, and hands back a `userDeviceId` and a
+     live-view link. Use that id and continue with step 3.
+  2. If it hands back because Docker is missing or the user said no, offer the two other ways and let them
+     pick: register this machine itself as the device (`aximo-setup` Step 4; Aximo
+     then takes the user's mouse and keyboard during the run), or a tunnel: put the dev
+     app on a temporary public URL and let Aximo's cloud browser open it.
+     `cloudflared tunnel --url http://localhost:3000` or `ngrok http 3000` (either tool
+     installed on the machine) prints the URL. Say plainly that the dev app is reachable
+     from the internet while the tunnel is up, and that a login screen, if any, must be
+     handled in the prompt because nobody can sign in for the agent. Use the tunnel URL
+     as `startUrl` and skip `userDeviceId`.
 
 ## 3. Compose the prompt and estimate the cost
 
@@ -112,7 +117,7 @@ Use the case path instead, and say why, in either of these cases:
 
 Immediately give the user both links: the session page
 `<base URL>/app/projects/<projectId>/sessions/<sessionId>` and, on the testbox, the
-live view (`aximo-testbox url`, see `local-device`). Say the run takes a few minutes.
+live view (`aximo-testbox url`, see the `aximo-testbox` skill). Say the run takes a few minutes.
 On the developer's own machine, say that Aximo now has their mouse and keyboard.
 
 ## 5. Wait
