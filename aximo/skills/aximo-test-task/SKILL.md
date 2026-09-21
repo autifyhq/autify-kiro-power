@@ -72,13 +72,39 @@ Every Aximo step costs credits. Follow all of these:
      handled in the prompt because nobody can sign in for the agent. Use the tunnel URL
      as `startUrl` and skip `userDeviceId`.
 
+## 2b. Check the app is reachable from the device
+
+A run against an unreachable app still costs credits, and the agent reports it as the
+app being broken rather than the setup. On the testbox, check first:
+
+```sh
+docker exec ${AXIMO_TESTBOX_NAME:-aximo-testbox} curl -s -o /dev/null -w '%{http_code}' --max-time 5 <URL>
+```
+
+Any 2xx, 3xx, or 4xx means the app answered; carry on. `000` means it did not, and the
+usual cause is a dev server bound to loopback only, which the developer's own browser
+reaches and the container cannot. Tell the user:
+
+> Your dev server answers in your browser but not in the test browser, so it is
+> listening on loopback only. Restart it bound to all interfaces: `--host` for Vite,
+> `-H 0.0.0.0` for Next.js, `--host 0.0.0.0` for most others.
+
+Then check again. Do not dispatch until it answers.
+
 ## 3. Compose the prompt and estimate the cost
 
 Use this shape. Put the URL in the prompt body: on a local device the browser is
 driven by keyboard and mouse and a separate `startUrl` is not opened for you.
 
+On the testbox the browser keeps its profile, so it is usually signed in already from
+`aximo-testbox` step 6. Do not ask for credentials before checking: put "if the page asks
+you to sign in, stop and say so" in the prompt and run it. Only when a run comes back
+saying it hit a login screen, ask the user for credentials once and reuse them for the
+rest of this Kiro session. On a tunnel or a deployed URL there is no saved profile, so
+ask up front.
+
 ```
-Open <URL> in the browser. Sign in as <role> if the page asks (credentials: <how>).
+Open <URL> in the browser. If it asks you to sign in, stop and say so.
 
 Verify each of these acceptance criteria for "<task title>". For each one, state
 PASS or FAIL with what you observed.
@@ -90,10 +116,19 @@ If you cannot reach the page, or a step blocks you, stop and explain what you sa
 instead of retrying. Do not explore beyond the criteria above.
 ```
 
-Estimate: a step is one browser action. A task-sized run is about 25 steps; count
-roughly 5 per criterion plus 5 to open the page and sign in. On `sonnet` a web step
-costs 1 credit; on `haiku` or `auto`, 0.5. One on-demand credit is one US cent. So a
-four-criterion task is about 25 credits (25 cents) on `sonnet`, half that on `auto`.
+Estimate the cost from measured runs, not from the number of criteria alone. Opening
+the page and signing in costs about 15 credits before any checking starts, and each
+criterion costs about 12 more. On `sonnet` a web step is 1 credit; on `haiku` or `auto`,
+0.5, so halve the total. One on-demand credit is one US cent.
+
+| Criteria | `sonnet` | `auto` |
+|---|---|---|
+| 1 | about 30 credits (30 cents) | about 15 |
+| 4 | about 60 credits (60 cents) | about 30 |
+| 8 | about 110 credits ($1.10) | about 55 |
+
+Say "about 30 credits", never "~30". A pair of tildes renders as strikethrough in Kiro
+and the user sees the number crossed out.
 
 Show the criteria list, the target URL, the device or tunnel, and the estimate. Ask
 before dispatching unless the user asked for this exact run in this turn.
@@ -115,9 +150,18 @@ Use the case path instead, and say why, in either of these cases:
   and offer to archive it after the run.
 - **`aximo_create_session` is not in your tool list** (older aximo-cli). Same two calls.
 
-Immediately give the user both links: the session page
-`<base URL>/app/projects/<projectId>/sessions/<sessionId>` and, on the testbox, the
-live view (`aximo-testbox url`, see the `aximo-testbox` skill). Say the run takes a few minutes.
+Immediately give the user both links. The session page is
+`<base URL>/app/projects/<projectId>/sessions/<sessionId>`, and `<base URL>` is not
+something to guess: read it from the config the CLI uses, so a sandbox or on-prem
+organization gets a link that works.
+
+```sh
+node -e 'try{console.log(JSON.parse(require("fs").readFileSync(process.env.HOME+"/.aximo/config.json","utf8")).baseUrl||"")}catch{}'
+```
+
+Empty output means the default, `https://aximo.autify.com`. The other link, on the
+testbox, is the live view (`aximo-testbox url`, see the `aximo-testbox` skill). Say the
+run takes a few minutes.
 On the developer's own machine, say that Aximo now has their mouse and keyboard.
 
 ## 5. Wait
