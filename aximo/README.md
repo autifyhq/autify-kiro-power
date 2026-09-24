@@ -34,17 +34,18 @@ bare repository URL does not import.
 
 Requires Node.js 20.18 or newer on the PATH (the MCP server runs via `npx`).
 
-The skills are written for the aximo-cli release that carries `aximo_create_session`,
-`aximo_wait_for_session`, and `aximo_list_user_devices` (autifyhq/aximo-cli#79). Until
-`mcp.json` pins that release, the skills fall back to the saved-case path and to polling
-`aximo_get_session`.
+The pinned `@autifyhq/aximo-cli@0.14.0` serves 32 MCP tools, including
+`aximo_list_user_devices`, which the skills use to find a local device.
+`aximo_create_session` and `aximo_wait_for_session` are not in it yet
+(autifyhq/aximo-cli#79); until the pin moves to the release that carries them, the skills
+fall back to the saved-case path and to polling `aximo_get_session`.
 
 ## Authenticate
 
 Aximo uses an organization API key. Run once, in any terminal:
 
 ```sh
-npx -y @autifyhq/aximo-cli@0.13.0 configure --base-url https://aximo.autify.com --api-key <key>
+npx -y @autifyhq/aximo-cli@0.14.0 configure --base-url https://aximo.autify.com --api-key <key>
 ```
 
 The key is stored in `~/.aximo/config.json` (mode 0600). `AXIMO_API_KEY` in the
