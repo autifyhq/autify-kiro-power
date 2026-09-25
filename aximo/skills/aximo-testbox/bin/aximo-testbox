@@ -24,7 +24,14 @@ NAME="${AXIMO_TESTBOX_NAME:-aximo-testbox}"
 IMAGE="aximo-testbox:local"
 PORTS="${AXIMO_TESTBOX_PORTS:-3000}"
 NOVNC_PORT="${AXIMO_TESTBOX_NOVNC_PORT:-6080}"
-BASE_URL="${AXIMO_BASE_URL:-https://aximo.autify.com}"
+# Same lookup order as aximo-cli: env, then ~/.aximo/config.json, then production.
+# The key is read from that file too, and a key configured against the wrong host 401s.
+config_base_url() {
+  [ -f "$HOME/.aximo/config.json" ] || return 0
+  node -e 'try{console.log(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).baseUrl||"")}catch{}' "$HOME/.aximo/config.json" 2>/dev/null || true
+}
+BASE_URL="${AXIMO_BASE_URL:-$(config_base_url)}"
+BASE_URL="${BASE_URL:-https://aximo.autify.com}"
 PROFILE_VOL="$NAME-profile"
 AXIMO_VOL="$NAME-aximo"
 NPM_VOL="$NAME-npm"

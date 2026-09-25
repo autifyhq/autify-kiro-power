@@ -1,0 +1,41 @@
+# Keeps one open PR from develop to main. Merging it is the release:
+# main is the branch Kiro users install from.
+name: Release PR
+
+on:
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  release-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open the develop -> main PR if main is behind and none is open
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          ahead=$(gh api "repos/$REPO/compare/main...develop" --jq .ahead_by)
+          if [ "$ahead" = "0" ]; then
+            echo "main already has everything on develop"
+            exit 0
+          fi
+
+          # An open PR follows develop on its own; nothing to refresh.
+          if [ -n "$(gh pr list -R "$REPO" --base main --head develop --state open --json number --jq '.[0].number')" ]; then
+            echo "release PR already open"
+            exit 0
+          fi
+
+          commits=$(gh api "repos/$REPO/compare/main...develop" \
+            --jq '.commits[] | "- " + (.commit.message | split("\n")[0]) + " (" + .sha[0:7] + ")"')
+
+          gh pr create -R "$REPO" --base main --head develop \
+            --title "Release: develop -> main" \
+            --body "$(printf 'Merging this publishes develop to main, the branch Kiro installs from.\n\nThis PR follows develop; new pushes land here until it is merged.\n\n## Commits\n\n%s\n' "$commits")"

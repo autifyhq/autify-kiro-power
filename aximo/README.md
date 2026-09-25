@@ -14,12 +14,11 @@ code to generate in between.
 |---|---|
 | `plugin.json` | Agent Plugins 1.0 manifest; `keywords` activate the power |
 | `mcp.json` | Starts the Aximo MCP server (`aximo mcp`) from `@autifyhq/aximo-cli` |
-| `skills/getting-started` | Credentials, project, local device setup |
-| `skills/test-what-you-built` | One session per completed task: dispatch, wait, collect |
-| `skills/spec-to-plan` | Whole `requirements.md` into an Aximo plan |
-| `skills/local-device` | A sandboxed browser container Aximo drives instead of your screen |
-| `testbox/` | The container: Dockerfile, entrypoint, Chrome policy, and the `aximo-testbox` script |
-| `hooks/` | Reference hook to copy into `.kiro/hooks/` (powers cannot ship hooks) |
+| `skills/aximo-setup` | Credentials, project, where tests run, and the hook |
+| `skills/aximo-testbox` | A sandboxed browser container Aximo drives instead of your screen: the skill, the `aximo-testbox` script, and the Docker image. A slim fork of the internal hatty testbox; goes away when aximo-cli ships `aximo device testbox` (GEN-3086) |
+| `skills/aximo-test-task` | One session per completed task: dispatch, wait, collect |
+| `skills/aximo-spec-to-plan` | Whole `requirements.md` into an Aximo plan |
+| `hooks/` | The task-complete hook; `aximo-setup` installs it into `.kiro/hooks/` (powers cannot ship hooks) |
 
 ## Install
 
@@ -35,17 +34,18 @@ bare repository URL does not import.
 
 Requires Node.js 20.18 or newer on the PATH (the MCP server runs via `npx`).
 
-Known gap with the pinned `@autifyhq/aximo-cli@0.13.0`: the MCP server exposes 24
-tools and `aximo_list_user_devices` is not among them (it is on `main`, unreleased). The
-skills fall back to asking you for `aximo device status` output until the next release,
-when the pin should move.
+The pinned `@autifyhq/aximo-cli@0.14.0` serves 32 MCP tools, including
+`aximo_list_user_devices`, which the skills use to find a local device.
+`aximo_create_session` and `aximo_wait_for_session` are not in it yet
+(autifyhq/aximo-cli#79); until the pin moves to the release that carries them, the skills
+fall back to the saved-case path and to polling `aximo_get_session`.
 
 ## Authenticate
 
 Aximo uses an organization API key. Run once, in any terminal:
 
 ```sh
-npx -y @autifyhq/aximo-cli@0.13.0 configure --base-url https://aximo.autify.com --api-key <key>
+npx -y @autifyhq/aximo-cli@0.14.0 configure --base-url https://aximo.autify.com --api-key <key>
 ```
 
 The key is stored in `~/.aximo/config.json` (mode 0600). `AXIMO_API_KEY` in the
@@ -59,15 +59,15 @@ Aximo's cloud browsers cannot reach `localhost`, so it needs a local device. The
 is a container: one Chrome on a virtual screen, whose `localhost` is your machine's. Aximo
 drives that screen, not yours, and you can watch through a live-view link.
 
-Run these from the power directory (`aximo/` in a clone, or the power's install
-directory once Kiro has imported it):
+Or say "test my local app" and Kiro does this for you. By hand, from the power directory
+(`aximo/` in a clone, or the power's install directory once Kiro has imported it):
 
 ```sh
-AXIMO_TESTBOX_PORTS=3000 testbox/bin/aximo-testbox up      # first run builds the image
-testbox/bin/aximo-testbox configure                    # reuses ~/.aximo/config.json
-testbox/bin/aximo-testbox setup                        # registers a device, once
-testbox/bin/aximo-testbox connect                      # runs in the background
-testbox/bin/aximo-testbox status
+AXIMO_TESTBOX_PORTS=3000 skills/aximo-testbox/bin/aximo-testbox up      # first run builds the image
+skills/aximo-testbox/bin/aximo-testbox configure                    # reuses ~/.aximo/config.json
+skills/aximo-testbox/bin/aximo-testbox setup                        # registers a device, once
+skills/aximo-testbox/bin/aximo-testbox connect                      # runs in the background
+skills/aximo-testbox/bin/aximo-testbox status
 ```
 
 Add `AXIMO_TESTBOX_BLOCK_HOSTS=your-prod-domain.com` to make the browser refuse production.
@@ -82,9 +82,14 @@ each run.
 
 ## Try it
 
-In Kiro chat: "test what I just built". The skill reads the completed task's
-`_Requirements_` references, builds a prompt from those criteria, runs one Aximo
-session, and reports PASS/FAIL per criterion with screenshots.
+In Kiro chat: "test what I just built", or finish a task through Kiro's task runner and
+let the hook from set up start it. The skill reads the completed task's `_Requirements_` references,
+builds a prompt from those criteria, shows you the criteria and the estimated cost, asks,
+runs one Aximo session, and reports PASS/FAIL per criterion with screenshots, the
+session link, and the live-view link.
+
+Kiro's terminal version cannot fire hooks. There, start a test by name:
+`/aximo-test-task`.
 
 ## Privacy and support
 
