@@ -139,16 +139,15 @@ Call `aximo_create_session` with `title: "Kiro: <task title>"`, `prompt`, `proje
 and either `userDeviceId` (local device) or `startUrl` (tunnel or deployed URL). Keep
 the returned `sessionId`. No case is saved.
 
-Use the case path instead, and say why, in either of these cases:
+If it comes back with `Insufficient credits to start session`, nothing was queued and no
+credits were spent. Stop and tell the user the organization is out of credits. Do not
+retry, and do not switch to the case path: it refuses the same way.
 
-- **The organization may be out of credits** (the user says so, or an earlier run this
-  session came back with `Insufficient credits`). Creating a session does not check the
-  balance first; running a case does, and refuses up front with `Insufficient credits to
-  start session`. Then: `aximo_create_case` with `projectId`, `type: "web"`, `title`,
-  `format: "plain_text"`, `scenario: <the prompt>`, followed by `aximo_run_case` with
-  `caseId` plus `userDeviceId` for a local device. Tell the user a case was left behind
-  and offer to archive it after the run.
-- **`aximo_create_session` is not in your tool list** (older aximo-cli). Same two calls.
+If `aximo_create_session` is not in your tool list (older aximo-cli), use the case path
+and say why: `aximo_create_case` with `projectId`, `type: "web"`, `title`,
+`format: "plain_text"`, `scenario: <the prompt>`, followed by `aximo_run_case` with
+`caseId` plus `userDeviceId` for a local device. Tell the user a case was left behind and
+offer to archive it after the run.
 
 Immediately give the user both links. The session page is
 `<base URL>/app/projects/<projectId>/sessions/<sessionId>`, and `<base URL>` is not
