@@ -1,5 +1,5 @@
-# Keeps one open PR from develop to main. Merging it is the release:
-# main is the branch Kiro users install from.
+# Keeps one open PR from develop to main, with its commit list current.
+# Merging it is the release: main is the branch Kiro users install from.
 name: Release PR
 
 on:
@@ -14,7 +14,7 @@ jobs:
   release-pr:
     runs-on: ubuntu-latest
     steps:
-      - name: Open the develop -> main PR if main is behind and none is open
+      - name: Open or refresh the develop -> main PR if main is behind
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
@@ -27,15 +27,15 @@ jobs:
             exit 0
           fi
 
-          # An open PR follows develop on its own; nothing to refresh.
-          if [ -n "$(gh pr list -R "$REPO" --base main --head develop --state open --json number --jq '.[0].number')" ]; then
-            echo "release PR already open"
-            exit 0
-          fi
-
           commits=$(gh api "repos/$REPO/compare/main...develop" \
             --jq '.commits[] | "- " + (.commit.message | split("\n")[0]) + " (" + .sha[0:7] + ")"')
+          body=$(printf 'Merging this publishes develop to main, the branch Kiro installs from.\n\nThis PR follows develop; new pushes land here until it is merged.\n\n## Commits\n\n%s\n' "$commits")
 
-          gh pr create -R "$REPO" --base main --head develop \
-            --title "Release: develop -> main" \
-            --body "$(printf 'Merging this publishes develop to main, the branch Kiro installs from.\n\nThis PR follows develop; new pushes land here until it is merged.\n\n## Commits\n\n%s\n' "$commits")"
+          # The PR picks up new commits on its own; only the body needs refreshing.
+          pr=$(gh pr list -R "$REPO" --base main --head develop --state open --json number --jq '.[0].number')
+          if [ -n "$pr" ]; then
+            gh api -X PATCH "repos/$REPO/pulls/$pr" -f body="$body" --silent
+          else
+            gh pr create -R "$REPO" --base main --head develop \
+              --title "Release: develop -> main" --body "$body"
+          fi
