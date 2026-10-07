@@ -33,7 +33,7 @@ Every Aximo step costs credits. Follow all of these:
 7. After every run, state `creditsUsed` for that run and the running total for this
    Kiro session.
 8. There is no per-run ceiling a caller can set. Aximo stops a session at 60 minutes,
-   4000 steps, or $20 of model spend, all far above a task-sized test. Nothing else
+   4000 steps, or a spend cap, all far above a task-sized test. Nothing else
    bounds a runaway run, so the length of the prompt is the real control.
 
 ## 1. Find the acceptance criteria
@@ -118,14 +118,15 @@ instead of retrying. Do not explore beyond the criteria above.
 
 Estimate the cost from measured runs, not from the number of criteria alone. Opening
 the page and signing in costs about 15 credits before any checking starts, and each
-criterion costs about 12 more. On `sonnet` a web step is 1 credit; on `haiku` or `auto`,
-0.5, so halve the total. One on-demand credit is one US cent.
+criterion costs about 12 more. On `haiku` or `auto`, halve the total.
 
-| Criteria | `sonnet` | `auto` |
+| Criteria | `sonnet` | `haiku` / `auto` |
 |---|---|---|
-| 1 | about 30 credits (30 cents) | about 15 |
-| 4 | about 60 credits (60 cents) | about 30 |
-| 8 | about 110 credits ($1.10) | about 55 |
+| 1 | about 30 credits | about 15 |
+| 4 | about 60 credits | about 30 |
+| 8 | about 110 credits | about 55 |
+
+Give the estimate in credits only. Never convert credits to money or quote a price.
 
 Say "about 30 credits", never "~30". A pair of tildes renders as strikethrough in Kiro
 and the user sees the number crossed out.
