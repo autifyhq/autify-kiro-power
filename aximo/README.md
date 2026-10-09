@@ -39,6 +39,8 @@ The pinned `@autifyhq/aximo-cli@0.14.0` serves 32 MCP tools, including
 `aximo_create_session` and `aximo_wait_for_session` are not in it yet
 (autifyhq/aximo-cli#79); until the pin moves to the release that carries them, the skills
 fall back to the saved-case path and to polling `aximo_get_session`.
+`aximo_get_credits` is not in it either (GEN-3088), so until the pin moves past the
+release that adds it, `aximo-test-task` reports each run's cost without the credits left.
 
 ## Authenticate
 
