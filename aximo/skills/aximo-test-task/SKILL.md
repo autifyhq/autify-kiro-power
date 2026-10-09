@@ -30,8 +30,13 @@ Every Aximo step costs credits. Follow all of these:
    Run against `<host>`?" and wait for a yes that repeats the host.
 6. Show the criteria and the estimated cost, then ask, before every run that the user did
    not start by hand in this turn. Hook-started and autopilot-started runs always ask.
-7. After every run, state `creditsUsed` for that run and the running total for this
-   Kiro session.
+   Call `aximo_get_credits` first and put `remaining` next to the estimate. If `blocked`
+   is true, do not ask: tell the user the organization is out of credits and stop.
+7. After every run, state `creditsUsed` for that run, the running total for this
+   Kiro session, and `remaining` from a fresh `aximo_get_credits` call.
+   If `metered` is false, say credits are not enforced for this organization and leave
+   `remaining` out. If `aximo_get_credits` is not in your tool list (older aximo-cli),
+   leave both `remaining` figures out and do not guess them.
 8. There is no per-run ceiling a caller can set. Aximo stops a session at 60 minutes,
    4000 steps, or a spend cap, all far above a task-sized test. Nothing else
    bounds a runaway run, so the length of the prompt is the real control.
@@ -185,7 +190,8 @@ than every 15 seconds until `status` is `succeeded`, `failed`, `terminated`, `er
 Call `aximo_get_session_timeline`. Then report, in this order:
 
 1. **Verdict.** `result` (`passed`, `failed`, `error`) and `creditsUsed`, plus the
-   running total for this Kiro session.
+   running total for this Kiro session and the organization's `remaining` credits
+   from `aximo_get_credits`.
 2. **Per criterion.** PASS or FAIL for each numbered criterion, taken from the agent's
    final `text` in the timeline and the session `summary` and `observations`.
 3. **Why it failed.** Quote the agent's own reasoning from the last assistant steps
