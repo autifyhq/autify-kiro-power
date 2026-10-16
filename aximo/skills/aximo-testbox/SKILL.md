@@ -78,6 +78,10 @@ MCP server; the power's pinned version has it. Ask the user to reload the power 
 panel, Aximo, Reload), then start again from step 2. Do not ask them to run the box from
 a terminal: this session would still lack the tools to watch and stop it.
 
+Ask for one reload only. If the tool is still missing after it, another `aximo` entry in
+the user's own MCP settings may be running an older version. Say so, and hand back to
+the skill that sent you here.
+
 ## What the box does not do
 
 It does not mount the workspace. It has no remote-debugging port. Its live view is bound
