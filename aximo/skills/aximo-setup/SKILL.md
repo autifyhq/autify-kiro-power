@@ -3,7 +3,7 @@ name: aximo-setup
 description: Set up Autify Aximo for this workspace. Use when the user installs the Aximo power, asks how to connect Aximo, hits an "Unauthorized" or "API key not configured" error from an aximo tool, asks to test a local app or an app on localhost, or wants a local test device.
 metadata:
   author: Autify
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 # Getting started with Aximo
@@ -36,7 +36,7 @@ Tell the user, verbatim:
 2. In any terminal run:
 
    ```sh
-   npx -y @autifyhq/aximo-cli@0.14.0 configure --base-url https://aximo.autify.com --api-key <paste key>
+   npx -y @autifyhq/aximo-cli@0.17.0 configure --base-url https://aximo.autify.com --api-key <paste key>
    ```
 
    Sandbox or on-prem users pass their own base URL.
@@ -63,10 +63,10 @@ so it needs a local device. Prefer the sandboxed browser; fall back to the machi
 
 ### 4a. A sandboxed browser in a container (needs Docker)
 
-Load the `aximo-testbox` skill now and do all of its steps. It checks Docker, asks the user
-once, brings up the container, registers it as a device, and hands back a `userDeviceId`
-and a live-view link. Remember both. If it hands back because Docker is missing or the
-user said no, go to 4b.
+Load the `aximo-testbox` skill now and do all of its steps. It asks the user once, starts
+the container through `aximo_start_testbox`, and hands back a `userDeviceId` and a
+live-view link. Remember both. If it hands back because Docker is missing or the user
+said no, go to 4b.
 
 ### 4b. This machine itself (no Docker)
 
@@ -81,8 +81,8 @@ terminal. Call `aximo_list_user_devices`.
   > separate terminal:
   >
   > ```sh
-  > npx -y @autifyhq/aximo-cli@0.14.0 device setup --name "$(hostname)"
-  > npx -y @autifyhq/aximo-cli@0.14.0 device connect
+  > npx -y @autifyhq/aximo-cli@0.17.0 device setup --name "$(hostname)"
+  > npx -y @autifyhq/aximo-cli@0.17.0 device connect
   > ```
   >
   > First run downloads a small Python runtime. On macOS, grant Accessibility and

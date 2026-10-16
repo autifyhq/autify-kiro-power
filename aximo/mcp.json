@@ -4,7 +4,7 @@
     "aximo": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@autifyhq/aximo-cli@0.14.0", "mcp"]
+      "args": ["-y", "@autifyhq/aximo-cli@0.17.0", "mcp"]
     }
   }
 }

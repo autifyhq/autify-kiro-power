@@ -1,0 +1,38 @@
+# A hotfix merged straight into main never reaches develop. Open a main -> develop
+# PR so it does. Release PRs (head: develop) need nothing back.
+name: Merge back to develop
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+concurrency:
+  group: merge-back
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  merge-back:
+    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref != 'develop'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open the main -> develop PR if none is open
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "$(gh pr list -R "$REPO" --base develop --head main --state open --json number --jq '.[0].number')" ]; then
+            echo "merge-back PR already open"
+            exit 0
+          fi
+
+          gh pr create -R "$REPO" --base develop --head main \
+            --title "Merge main back to develop" \
+            --body "$(printf 'A hotfix landed on main: %s\n\nMerge with a merge commit, not squash, so develop and main share history.\n' "$PR_URL")"

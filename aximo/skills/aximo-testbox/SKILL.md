@@ -1,87 +1,89 @@
 ---
 name: aximo-testbox
-description: Set up a sandboxed browser in Docker on this machine that Aximo drives as a local device, so tests of an app on localhost never touch the developer's own screen. Use when the app under test runs on localhost, when the user asks to test a local app safely, or when aximo-setup or aximo-test-task finds no local device online.
+description: Bring up a sandboxed browser in Docker on this machine that Aximo drives as a local device, so tests of an app on localhost never touch the developer's own screen. Use when the app under test runs on localhost, when the user asks to test a local app safely, or when aximo-setup or aximo-test-task finds no local device online.
 metadata:
   author: Autify
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 # A local device that is not your screen
 
 Aximo's cloud browsers cannot reach `localhost`. A local device can. But registering the
 developer's own laptop means Aximo takes their mouse and keyboard for the whole run. This
-skill gives Aximo a container instead: one Chrome on a virtual screen, whose `localhost` is
-the developer's `localhost`, with a live view the developer can watch in a browser tab.
+skill gives Aximo a container instead: one Chromium on a virtual screen, whose `localhost`
+is the developer's `localhost`, with a live view the developer can watch in a browser tab.
 
-**You run every command here with your shell tool.** Do not paste them to the user. The
-user answers two questions (yes to the setup, and the port) and nothing else. Every
-command is safe to re-run.
+The box is `aximo device testbox` in aximo-cli, and you drive it with three MCP tools:
+`aximo_start_testbox`, `aximo_get_testbox`, `aximo_stop_testbox`. **No shell commands.**
+The user answers two questions (yes to the setup, and the port) and nothing else. Every
+tool is safe to call again.
 
-## 1. Find the script
+## 1. Ask once
 
-It ships in this skill, next to this file: `bin/aximo-testbox`. Resolve it relative to this
-`SKILL.md`. If you do not know this file's path:
+"No test browser is online. Start the sandboxed one in Docker? The first time downloads a
+1 GB image and takes a couple of minutes. Which port does the app serve on (default 3000)?"
 
-```sh
-BOX=$(ls ~/.kiro/powers/installed/*/skills/aximo-testbox/bin/aximo-testbox 2>/dev/null | head -1)
-```
+Stop on no and hand back to the skill that sent you here.
 
-Empty result: ask the user where they imported the power from and use
-`<that folder>/skills/aximo-testbox/bin/aximo-testbox`.
+## 2. Start it
 
-## 2. Check Docker
+Call `aximo_start_testbox` with `ports` (the user's port, or `"3000"`) and
+`timeoutSeconds: 60`. If the user has a production hostname, add
+`blockHosts: ["app.example.com"]` so the browser refuses it.
 
-Run `docker info`. If it fails, stop: tell the user Docker Desktop (macOS, Windows) or a
-Docker engine (Linux) is needed for the sandboxed device, and hand back to the skill that
-sent you here for the fallback (register the laptop itself, or test a deployed URL).
+- A tool error mentioning Docker: Docker is not installed or not running. Show the
+  message (it carries the install link or the fix) and hand back for the fallback
+  (register the laptop itself, or test a deployed URL).
+- `ready: true`: go to step 4.
+- `ready: false`: go to step 3.
 
-## 3. Ask once
+## 3. Wait for it
 
-"No test browser is online. Set up the sandboxed one in Docker? The first time builds an
-image and takes a couple of minutes. Which port does the app serve on (default 3000)?"
+Call `aximo_get_testbox` with `timeoutSeconds: 45` until `ready: true`. A first start
+pulls the image, so expect several calls; each returns the current `state` (`pulling`,
+`starting`, `connecting`). Do not call `aximo_start_testbox` again and do not add a
+shell `sleep`. Give up after 10 calls: report `state` and `lastError` and hand back.
 
-Stop on no and hand back.
+`state: "error"` means the start failed; `lastError` says why. Show it to the user. Once
+the cause is fixed, `aximo_start_testbox` again.
 
-## 4. Bring the box up
+## 4. Hand the user the live view
 
-```sh
-AXIMO_TESTBOX_PORTS=<port> $BOX up
-```
+The result carries `liveViewUrl`. Give it to the user: "This is the browser Aximo will
+drive. Open it in a tab to watch." If the app has a login screen, ask them to sign in
+there once and leave the browser on the page tests should start from. You cannot type
+someone's password. The profile survives stop and start.
 
-Show the user the output. It prints a live-view link; give it to them: "This is the browser
-Aximo will drive. Open it in a tab to watch." If the user has a production hostname, add
-`AXIMO_TESTBOX_BLOCK_HOSTS=app.example.com` so the browser refuses it.
+## 5. Hand back the device id
 
-## 5. Give the box the key, register it, connect it
-
-```sh
-$BOX configure     # reuses the key from ~/.aximo/config.json
-$BOX setup         # registers a device named kiro-<hostname>, once per box
-$BOX connect       # runs in the background until `down`; never start a second one
-$BOX status        # want: connect running, device online
-```
-
-The key lives in a Docker volume, never in the container's environment or the workspace.
-
-## 6. Sign in through the live view, if the app needs it
-
-You cannot type someone's password. If the app has a login screen, ask the user to open the
-live-view link, sign in once, and leave the browser on the page tests should start from.
-The profile survives `down` and `up`; only `reset` clears it.
-
-## 7. Hand back the device id
-
-Call `aximo_list_user_devices` until the `kiro-<hostname>` device shows `online` (every 10
-seconds, up to 2 minutes). Return its `id`: that is the `userDeviceId` for runs. Also hand
-the user the live-view link again (`$BOX url`); every run report should carry it.
+Return `userDeviceId` from the result: that is the local device for `aximo_create_session`
+and case runs. Also check `ports`: `reachable: false` means the app is not answering
+inside the box; `aximo-test-task` step 2b says what to tell the user.
 
 ## Put it away
 
-`$BOX down` stops the box and keeps the profile and key. `$BOX reset` also drops the
-profile. `$BOX prune` removes everything, including the device registration and the image.
+`aximo_stop_testbox` stops the container and keeps the browser profile and the device
+registration, so the next start takes seconds. Dropping the profile (fresh sign-in) or
+the registration is a human action in a terminal:
+
+```sh
+npx -y @autifyhq/aximo-cli@0.17.0 device testbox reset   # drop the browser profile
+npx -y @autifyhq/aximo-cli@0.17.0 device testbox prune   # remove everything, including the device
+```
+
+## If the tools are missing
+
+No `aximo_start_testbox` in your tool list means Kiro is still running an older aximo
+MCP server; the power's pinned version has it. Ask the user to reload the power (Powers
+panel, Aximo, Reload), then start again from step 2. Do not ask them to run the box from
+a terminal: this session would still lack the tools to watch and stop it.
+
+Ask for one reload only. If the tool is still missing after it, another `aximo` entry in
+the user's own MCP settings may be running an older version. Say so, and hand back to
+the skill that sent you here.
 
 ## What the box does not do
 
 It does not mount the workspace. It has no remote-debugging port. Its live view is bound
-to 127.0.0.1 and always has a password. It cannot click anything on the developer's own
-screen.
+to 127.0.0.1 and always has a password. The API key never enters the container. It
+cannot click anything on the developer's own screen. macOS and Linux; Windows untested.
