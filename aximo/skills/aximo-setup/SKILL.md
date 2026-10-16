@@ -36,7 +36,7 @@ Tell the user, verbatim:
 2. In any terminal run:
 
    ```sh
-   npx -y @autifyhq/aximo-cli@0.16.0 configure --base-url https://aximo.autify.com --api-key <paste key>
+   npx -y @autifyhq/aximo-cli@0.17.0 configure --base-url https://aximo.autify.com --api-key <paste key>
    ```
 
    Sandbox or on-prem users pass their own base URL.
@@ -81,8 +81,8 @@ terminal. Call `aximo_list_user_devices`.
   > separate terminal:
   >
   > ```sh
-  > npx -y @autifyhq/aximo-cli@0.16.0 device setup --name "$(hostname)"
-  > npx -y @autifyhq/aximo-cli@0.16.0 device connect
+  > npx -y @autifyhq/aximo-cli@0.17.0 device setup --name "$(hostname)"
+  > npx -y @autifyhq/aximo-cli@0.17.0 device connect
   > ```
   >
   > First run downloads a small Python runtime. On macOS, grant Accessibility and

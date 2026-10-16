@@ -67,18 +67,20 @@ registration, so the next start takes seconds. Dropping the profile (fresh sign-
 the registration is a human action in a terminal:
 
 ```sh
-npx -y @autifyhq/aximo-cli@0.16.0 device testbox reset   # drop the browser profile
-npx -y @autifyhq/aximo-cli@0.16.0 device testbox prune   # remove everything, including the device
+npx -y @autifyhq/aximo-cli@0.17.0 device testbox reset   # drop the browser profile
+npx -y @autifyhq/aximo-cli@0.17.0 device testbox prune   # remove everything, including the device
 ```
 
 ## If the tools are missing
 
-No `aximo_start_testbox` in your tool list means an aximo-cli older than 0.16.0. Ask the
-user to run the same thing in a terminal and tell you when it prints `"state": "online"`:
+No `aximo_start_testbox` in your tool list means Kiro is still running an older aximo
+MCP server; the power's pinned version has it. Ask the user to reload the power (Powers
+panel, Aximo, Reload), then start again from step 2. Do not ask them to run the box from
+a terminal: this session would still lack the tools to watch and stop it.
 
-```sh
-npx -y @autifyhq/aximo-cli@0.16.0 device testbox up --ports <port>
-```
+Ask for one reload only. If the tool is still missing after it, another `aximo` entry in
+the user's own MCP settings may be running an older version. Say so, and hand back to
+the skill that sent you here.
 
 ## What the box does not do
 

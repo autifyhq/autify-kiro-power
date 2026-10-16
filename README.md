@@ -5,7 +5,7 @@ power per directory, so this repository holds one directory per product.
 
 | Power | Directory | Install URL | Status |
 |---|---|---|---|
-| Autify Aximo | [`aximo/`](aximo/) | `https://github.com/autifyhq/autify-kiro-power/tree/main/aximo` | Preview |
+| Autify Aximo | [`aximo/`](aximo/) | `https://github.com/autifyhq/autify-kiro-power/tree/main/aximo` | Available |
 | Autify Genesis | not here yet | | Planned (GEN-3003) |
 
 ## Install a power
@@ -27,7 +27,7 @@ it. Nothing at the repository root needs to change.
 
 ## Licence
 
-Not settled yet. These powers are published for preview while that is decided.
+Apache License 2.0. See [`LICENSE`](LICENSE).
 
 ## Privacy and support
 

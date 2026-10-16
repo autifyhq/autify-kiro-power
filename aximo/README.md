@@ -34,16 +34,16 @@ bare repository URL does not import.
 
 Requires Node.js 20.18 or newer on the PATH (the MCP server runs via `npx`).
 
-The pinned `@autifyhq/aximo-cli@0.16.0` serves 39 MCP tools, including
-`aximo_create_session`, `aximo_wait_for_session`, and the three testbox tools the skills
-use to start, watch, and stop the sandboxed browser.
+The pinned `@autifyhq/aximo-cli@0.17.0` serves 41 MCP tools, including
+`aximo_create_session`, `aximo_wait_for_session`, `aximo_get_credits`, and the three
+testbox tools the skills use to start, watch, and stop the sandboxed browser.
 
 ## Authenticate
 
 Aximo uses an organization API key. Run once, in any terminal:
 
 ```sh
-npx -y @autifyhq/aximo-cli@0.16.0 configure --base-url https://aximo.autify.com --api-key <key>
+npx -y @autifyhq/aximo-cli@0.17.0 configure --base-url https://aximo.autify.com --api-key <key>
 ```
 
 The key is stored in `~/.aximo/config.json` (mode 0600). `AXIMO_API_KEY` in the
@@ -61,10 +61,10 @@ Or say "test my local app" and Kiro does this for you through the `aximo_start_t
 `aximo_get_testbox`, and `aximo_stop_testbox` tools. By hand, in any terminal:
 
 ```sh
-npx -y @autifyhq/aximo-cli@0.16.0 device testbox up --ports 3000   # pulls the image once, registers, starts, connects
-npx -y @autifyhq/aximo-cli@0.16.0 device testbox status
-npx -y @autifyhq/aximo-cli@0.16.0 device testbox down               # keeps the browser profile and the registration
-npx -y @autifyhq/aximo-cli@0.16.0 device testbox prune              # removes everything, including the device
+npx -y @autifyhq/aximo-cli@0.17.0 device testbox up --ports 3000   # pulls the image once, registers, starts, connects
+npx -y @autifyhq/aximo-cli@0.17.0 device testbox status
+npx -y @autifyhq/aximo-cli@0.17.0 device testbox down               # keeps the browser profile and the registration
+npx -y @autifyhq/aximo-cli@0.17.0 device testbox prune              # removes everything, including the device
 ```
 
 Add `--block-hosts your-prod-domain.com` to make the browser refuse production.
@@ -87,6 +87,10 @@ session link, and the live-view link.
 
 Kiro's terminal version cannot fire hooks. There, start a test by name:
 `/aximo-test-task`.
+
+## Licence
+
+Apache License 2.0. See [`LICENSE`](LICENSE).
 
 ## Privacy and support
 
