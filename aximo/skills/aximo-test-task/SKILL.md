@@ -3,7 +3,7 @@ name: aximo-test-task
 description: Run a real end-to-end browser test of the spec task you just implemented. Use when the user says "test what I built", "test this task", "verify the acceptance criteria in the browser", after a spec task is marked complete, or when a hook asks for an Aximo run. Reads the task's acceptance criteria, runs them with Aximo, and reports the verdict with screenshots and the failure reasoning.
 metadata:
   author: Autify
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 # Test what you just built
@@ -60,16 +60,16 @@ Every Aximo step costs credits. Follow all of these:
   the workspace has a dev server script.
 - **Project.** Use the `projectId` chosen in `aximo-setup`, or `aximo_list_projects`.
 - **Device, for a localhost URL.** Call `aximo_list_user_devices` and pick a desktop
-  device with `status: "online"`. Prefer the testbox (`kiro-<hostname>`) over the
-  developer's own machine.
+  device with `status: "online"`. Prefer the testbox (`os: "Testbox (Docker)"`, named
+  `<hostname>-testbox-…`) over the developer's own machine.
 
   **None online.** Do not queue a run against an offline device: the run waits up to
   30 minutes for the device and then errors, and that shows up as a stuck run. Do not
   hand the user shell commands to run. Bring a device up yourself:
 
-  1. Load the `aximo-testbox` skill now and do all of its steps. It checks Docker, asks
-     the user once, brings up the container, and hands back a `userDeviceId` and a
-     live-view link. Use that id and continue with step 3.
+  1. Load the `aximo-testbox` skill now and do all of its steps. It asks the user once,
+     starts the container through `aximo_start_testbox`, and hands back a `userDeviceId`
+     and a live-view link. Use that id and continue with step 3.
   2. If it hands back because Docker is missing or the user said no, offer the two other ways and let them
      pick: register this machine itself as the device (`aximo-setup` Step 4; Aximo
      then takes the user's mouse and keyboard during the run), or a tunnel: put the dev
@@ -83,15 +83,11 @@ Every Aximo step costs credits. Follow all of these:
 ## 2b. Check the app is reachable from the device
 
 A run against an unreachable app still costs credits, and the agent reports it as the
-app being broken rather than the setup. On the testbox, check first:
-
-```sh
-docker exec ${AXIMO_TESTBOX_NAME:-aximo-testbox} curl -s -o /dev/null -w '%{http_code}' --max-time 5 <URL>
-```
-
-Any 2xx, 3xx, or 4xx means the app answered; carry on. `000` means it did not, and the
-usual cause is a dev server bound to loopback only, which the developer's own browser
-reaches and the container cannot. Tell the user:
+app being broken rather than the setup. On the testbox, call `aximo_get_testbox` first
+and read `ports`: `reachable: true` for the app's port means it answered; carry on.
+`reachable: false` means it did not, and the usual cause is a dev server bound to
+loopback only, which the developer's own browser reaches and the container cannot. Tell
+the user:
 
 > Your dev server answers in your browser but not in the test browser, so it is
 > listening on loopback only. Restart it bound to all interfaces: `--host` for Vite,
@@ -168,8 +164,7 @@ node -e 'try{console.log(JSON.parse(require("fs").readFileSync(process.env.HOME+
 ```
 
 Empty output means the default, `https://aximo.autify.com`. The other link, on the
-testbox, is the live view (`aximo-testbox url`, see the `aximo-testbox` skill). Say the
-run takes a few minutes.
+testbox, is `liveViewUrl` from `aximo_get_testbox`. Say the run takes a few minutes.
 On the developer's own machine, say that Aximo now has their mouse and keyboard.
 
 ## 5. Wait

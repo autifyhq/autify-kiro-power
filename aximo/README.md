@@ -15,7 +15,7 @@ code to generate in between.
 | `plugin.json` | Agent Plugins 1.0 manifest; `keywords` activate the power |
 | `mcp.json` | Starts the Aximo MCP server (`aximo mcp`) from `@autifyhq/aximo-cli` |
 | `skills/aximo-setup` | Credentials, project, where tests run, and the hook |
-| `skills/aximo-testbox` | A sandboxed browser container Aximo drives instead of your screen: the skill, the `aximo-testbox` script, and the Docker image. A slim fork of the internal hatty testbox; goes away when aximo-cli ships `aximo device testbox` (GEN-3086) |
+| `skills/aximo-testbox` | A sandboxed browser container Aximo drives instead of your screen, driven through the `aximo_*_testbox` MCP tools (`aximo device testbox` in aximo-cli) |
 | `skills/aximo-test-task` | One session per completed task: dispatch, wait, collect |
 | `skills/aximo-spec-to-plan` | Whole `requirements.md` into an Aximo plan |
 | `hooks/` | The task-complete hook; `aximo-setup` installs it into `.kiro/hooks/` (powers cannot ship hooks) |
@@ -34,20 +34,16 @@ bare repository URL does not import.
 
 Requires Node.js 20.18 or newer on the PATH (the MCP server runs via `npx`).
 
-The pinned `@autifyhq/aximo-cli@0.14.0` serves 32 MCP tools, including
-`aximo_list_user_devices`, which the skills use to find a local device.
-`aximo_create_session` and `aximo_wait_for_session` are not in it yet
-(autifyhq/aximo-cli#79); until the pin moves to the release that carries them, the skills
-fall back to the saved-case path and to polling `aximo_get_session`.
-`aximo_get_credits` is not in it either (GEN-3088), so until the pin moves past the
-release that adds it, `aximo-test-task` reports each run's cost without the credits left.
+The pinned `@autifyhq/aximo-cli@0.16.0` serves 39 MCP tools, including
+`aximo_create_session`, `aximo_wait_for_session`, and the three testbox tools the skills
+use to start, watch, and stop the sandboxed browser.
 
 ## Authenticate
 
 Aximo uses an organization API key. Run once, in any terminal:
 
 ```sh
-npx -y @autifyhq/aximo-cli@0.14.0 configure --base-url https://aximo.autify.com --api-key <key>
+npx -y @autifyhq/aximo-cli@0.16.0 configure --base-url https://aximo.autify.com --api-key <key>
 ```
 
 The key is stored in `~/.aximo/config.json` (mode 0600). `AXIMO_API_KEY` in the
@@ -61,22 +57,21 @@ Aximo's cloud browsers cannot reach `localhost`, so it needs a local device. The
 is a container: one Chrome on a virtual screen, whose `localhost` is your machine's. Aximo
 drives that screen, not yours, and you can watch through a live-view link.
 
-Or say "test my local app" and Kiro does this for you. By hand, from the power directory
-(`aximo/` in a clone, or the power's install directory once Kiro has imported it):
+Or say "test my local app" and Kiro does this for you through the `aximo_start_testbox`,
+`aximo_get_testbox`, and `aximo_stop_testbox` tools. By hand, in any terminal:
 
 ```sh
-AXIMO_TESTBOX_PORTS=3000 skills/aximo-testbox/bin/aximo-testbox up      # first run builds the image
-skills/aximo-testbox/bin/aximo-testbox configure                    # reuses ~/.aximo/config.json
-skills/aximo-testbox/bin/aximo-testbox setup                        # registers a device, once
-skills/aximo-testbox/bin/aximo-testbox connect                      # runs in the background
-skills/aximo-testbox/bin/aximo-testbox status
+npx -y @autifyhq/aximo-cli@0.16.0 device testbox up --ports 3000   # pulls the image once, registers, starts, connects
+npx -y @autifyhq/aximo-cli@0.16.0 device testbox status
+npx -y @autifyhq/aximo-cli@0.16.0 device testbox down               # keeps the browser profile and the registration
+npx -y @autifyhq/aximo-cli@0.16.0 device testbox prune              # removes everything, including the device
 ```
 
-Add `AXIMO_TESTBOX_BLOCK_HOSTS=your-prod-domain.com` to make the browser refuse production.
-`down` keeps the browser profile and the key. `prune` removes everything.
+Add `--block-hosts your-prod-domain.com` to make the browser refuse production.
 
-The box mounts none of your code, has no remote-debugging port, and binds its live view
-to 127.0.0.1 with a generated password.
+The box mounts none of your code, has no remote-debugging port, binds its live view to
+127.0.0.1 with a generated password, and never sees your API key: the CLI registers the
+box and hands it only a device-scoped token.
 
 Without Docker, you can register the machine itself with `aximo device setup` and
 `aximo device connect`. Aximo then controls your real mouse and keyboard for the length of
