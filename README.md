@@ -27,7 +27,7 @@ it. Nothing at the repository root needs to change.
 
 ## Licence
 
-Not settled yet. These powers are published for preview while that is decided.
+Apache License 2.0. See [`LICENSE`](LICENSE).
 
 ## Privacy and support
 

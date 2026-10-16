@@ -88,6 +88,10 @@ session link, and the live-view link.
 Kiro's terminal version cannot fire hooks. There, start a test by name:
 `/aximo-test-task`.
 
+## Licence
+
+Apache License 2.0. See [`LICENSE`](../LICENSE).
+
 ## Privacy and support
 
 - Privacy policy: https://autify.com/privacy
