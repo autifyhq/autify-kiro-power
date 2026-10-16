@@ -67,8 +67,8 @@ registration, so the next start takes seconds. Dropping the profile (fresh sign-
 the registration is a human action in a terminal:
 
 ```sh
-npx -y @autifyhq/aximo-cli@0.16.0 device testbox reset   # drop the browser profile
-npx -y @autifyhq/aximo-cli@0.16.0 device testbox prune   # remove everything, including the device
+npx -y @autifyhq/aximo-cli@0.17.0 device testbox reset   # drop the browser profile
+npx -y @autifyhq/aximo-cli@0.17.0 device testbox prune   # remove everything, including the device
 ```
 
 ## If the tools are missing
@@ -77,7 +77,7 @@ No `aximo_start_testbox` in your tool list means an aximo-cli older than 0.16.0.
 user to run the same thing in a terminal and tell you when it prints `"state": "online"`:
 
 ```sh
-npx -y @autifyhq/aximo-cli@0.16.0 device testbox up --ports <port>
+npx -y @autifyhq/aximo-cli@0.17.0 device testbox up --ports <port>
 ```
 
 ## What the box does not do
