@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "aximo",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Autify Aximo for Kiro. Turn a spec task's acceptance criteria into a real end-to-end browser test, run it against your local or deployed app, and get the verdict, screenshots, and failure reasoning back in the editor.",
   "author": { "name": "Autify", "email": "support@autify.com", "url": "https://autify.com" },
   "license": "Apache-2.0",
