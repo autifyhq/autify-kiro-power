@@ -90,7 +90,7 @@ Kiro's terminal version cannot fire hooks. There, start a test by name:
 
 ## Licence
 
-Apache License 2.0. See [`LICENSE`](../LICENSE).
+Apache License 2.0. See [`LICENSE`](LICENSE).
 
 ## Privacy and support
 
