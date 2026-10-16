@@ -73,12 +73,10 @@ npx -y @autifyhq/aximo-cli@0.17.0 device testbox prune   # remove everything, in
 
 ## If the tools are missing
 
-No `aximo_start_testbox` in your tool list means an aximo-cli older than 0.16.0. Ask the
-user to run the same thing in a terminal and tell you when it prints `"state": "online"`:
-
-```sh
-npx -y @autifyhq/aximo-cli@0.17.0 device testbox up --ports <port>
-```
+No `aximo_start_testbox` in your tool list means Kiro is still running an older aximo
+MCP server; the power's pinned version has it. Ask the user to reload the power (Powers
+panel, Aximo, Reload), then start again from step 2. Do not ask them to run the box from
+a terminal: this session would still lack the tools to watch and stop it.
 
 ## What the box does not do
 
