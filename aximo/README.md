@@ -1,94 +1,107 @@
 # Autify Aximo power for Kiro
 
 Turn a spec task's acceptance criteria into a real end-to-end browser test, run it
-against your local or deployed app, and get the verdict, screenshots, and the agent's
-own failure reasoning back in the editor.
+against your local or deployed app, and get the results back in the editor: a verdict for
+each criterion, screenshots, and the agent's reasoning for any failure.
 
-Aximo tests are natural-language prompts executed by a browser agent. Kiro specs already
-hold acceptance criteria in structured form under `.kiro/specs/`, so there is no test
-code to generate in between.
+Aximo tests are natural-language prompts run by a browser agent. Kiro specs already keep
+acceptance criteria in a structured form under `.kiro/specs/`, so the power works from
+them directly. You don't need to write or generate any test code.
 
-## What is in the power
+## What's included
 
 | Path | Purpose |
 |---|---|
-| `plugin.json` | Agent Plugins 1.0 manifest; `keywords` activate the power |
-| `mcp.json` | Starts the Aximo MCP server (`aximo mcp`) from `@autifyhq/aximo-cli` |
-| `skills/aximo-setup` | Credentials, project, where tests run, and the hook |
-| `skills/aximo-testbox` | A sandboxed browser container Aximo drives instead of your screen, driven through the `aximo_*_testbox` MCP tools (`aximo device testbox` in aximo-cli) |
-| `skills/aximo-test-task` | One session per completed task: dispatch, wait, collect |
-| `skills/aximo-spec-to-plan` | Whole `requirements.md` into an Aximo plan |
-| `hooks/` | The task-complete hook; `aximo-setup` installs it into `.kiro/hooks/` (powers cannot ship hooks) |
+| `plugin.json` | Power manifest (Agent Plugins 1.0). Its `keywords` tell Kiro when to activate the power |
+| `mcp.json` | Starts the Aximo MCP server from `@autifyhq/aximo-cli` |
+| `skills/aximo-setup` | Sets up credentials, the Aximo project, where tests run, and the task-complete hook |
+| `skills/aximo-testbox` | Runs tests in a sandboxed browser container instead of on your screen |
+| `skills/aximo-test-task` | Tests a completed task: starts one Aximo session, waits for it, and reports the results |
+| `skills/aximo-spec-to-plan` | Turns a whole `requirements.md` into an Aximo test plan |
+| `hooks/` | The task-complete hook. Kiro doesn't load hooks from powers, so `aximo-setup` installs it into `.kiro/hooks/` for you |
+
+## Requirements
+
+- Kiro IDE
+- Node.js 20.18 or newer on your `PATH` (the MCP server runs through `npx`)
+- An Aximo organization API key
+- Docker, if you want to test an app running on your machine (see [Test a local app](#test-a-local-app))
 
 ## Install
 
-Kiro IDE: Powers panel, **Add Custom Power**, **Import power from a folder**, pick this
-`aximo` directory, **Install**. Or **Import power from GitHub** with
+1. In Kiro, open the **Powers** panel and choose **Add Custom Power**.
+2. Choose **Import power from GitHub** and paste:
 
+   ```
+   https://github.com/autifyhq/autify-kiro-power/tree/main/aximo
+   ```
+
+3. Click **Install**.
+
+To install from a local copy instead, clone the `main` branch and choose
+**Import power from a folder** with the `aximo` directory:
+
+```sh
+git clone --branch main https://github.com/autifyhq/autify-kiro-power.git
 ```
-https://github.com/autifyhq/autify-kiro-power/tree/main/aximo
-```
-
-The repository holds one directory per power and no `plugin.json` at its root, so the
-bare repository URL does not import.
-
-Requires Node.js 20.18 or newer on the PATH (the MCP server runs via `npx`).
-
-The pinned `@autifyhq/aximo-cli@0.17.0` serves 41 MCP tools, including
-`aximo_create_session`, `aximo_wait_for_session`, `aximo_get_credits`, and the three
-testbox tools the skills use to start, watch, and stop the sandboxed browser.
 
 ## Authenticate
 
-Aximo uses an organization API key. Run once, in any terminal:
+Run this once in any terminal, with your organization API key:
 
 ```sh
 npx -y @autifyhq/aximo-cli@0.17.0 configure --base-url https://aximo.autify.com --api-key <key>
 ```
 
-The key is stored in `~/.aximo/config.json` (mode 0600). `AXIMO_API_KEY` in the
-environment takes precedence if set. The power's `mcp.json` deliberately sets no `env`:
-Kiro passes unapproved `${VAR}` placeholders through as literal text, which would shadow
-the config file with a bogus key.
+The key is saved to `~/.aximo/config.json`, readable only by your user. If `AXIMO_API_KEY`
+is set in your environment, it takes precedence.
+
+Keep the key out of the power's `mcp.json`. Kiro passes unapproved `${VAR}` placeholders
+through as literal text, which would override your saved key with an invalid one.
 
 ## Test a local app
 
-Aximo's cloud browsers cannot reach `localhost`, so it needs a local device. The safe kind
-is a container: one Chrome on a virtual screen, whose `localhost` is your machine's. Aximo
-drives that screen, not yours, and you can watch through a live-view link.
+Aximo's cloud browsers can't reach `localhost`. To test an app running on your machine,
+use the testbox: a Docker container with its own Chrome on a virtual screen, where
+`localhost` points to your machine. Aximo drives the testbox instead of your screen, and
+you can watch each run through a live-view link.
 
-Or say "test my local app" and Kiro does this for you through the `aximo_start_testbox`,
-`aximo_get_testbox`, and `aximo_stop_testbox` tools. By hand, in any terminal:
+The easiest way is to ask Kiro to "test my local app", and the power starts the testbox
+for you. To manage it yourself:
 
 ```sh
-npx -y @autifyhq/aximo-cli@0.17.0 device testbox up --ports 3000   # pulls the image once, registers, starts, connects
+npx -y @autifyhq/aximo-cli@0.17.0 device testbox up --ports 3000   # first run pulls the image, then registers and connects
 npx -y @autifyhq/aximo-cli@0.17.0 device testbox status
-npx -y @autifyhq/aximo-cli@0.17.0 device testbox down               # keeps the browser profile and the registration
-npx -y @autifyhq/aximo-cli@0.17.0 device testbox prune              # removes everything, including the device
+npx -y @autifyhq/aximo-cli@0.17.0 device testbox down               # stops it, keeping the browser profile and registration
+npx -y @autifyhq/aximo-cli@0.17.0 device testbox prune              # removes everything, including the device registration
 ```
 
-Add `--block-hosts your-prod-domain.com` to make the browser refuse production.
+To keep tests away from production, add `--block-hosts your-prod-domain.com` and the
+browser will refuse to open that domain.
 
-The box mounts none of your code, has no remote-debugging port, binds its live view to
-127.0.0.1 with a generated password, and never sees your API key: the CLI registers the
-box and hands it only a device-scoped token.
+The testbox is isolated from your machine:
 
-Without Docker, you can register the machine itself with `aximo device setup` and
-`aximo device connect`. Aximo then controls your real mouse and keyboard for the length of
-each run.
+- It doesn't mount any of your code.
+- It exposes no remote-debugging port.
+- Its live view listens only on `127.0.0.1` and is protected by a generated password.
+- It never receives your API key, only a token scoped to that one device.
+
+If you can't use Docker, you can register your own machine with `aximo device setup` and
+`aximo device connect`. Aximo then controls your mouse and keyboard while each test runs.
 
 ## Try it
 
-In Kiro chat: "test what I just built", or finish a task through Kiro's task runner and
-let the hook from set up start it. The skill reads the completed task's `_Requirements_` references,
-builds a prompt from those criteria, shows you the criteria and the estimated cost, asks,
-runs one Aximo session, and reports PASS/FAIL per criterion with screenshots, the
-session link, and the live-view link.
+In Kiro chat, say "test what I just built". Or complete a task with Kiro's task runner and
+let the hook installed during setup start the test.
 
-Kiro's terminal version cannot fire hooks. There, start a test by name:
-`/aximo-test-task`.
+The power reads the completed task's `_Requirements_` references and builds a test from
+those criteria. Before running, it shows you the criteria and the estimated cost and asks
+for confirmation. When the run finishes, you get PASS or FAIL for each criterion, with
+screenshots, a link to the session, and the live-view link.
 
-## Licence
+Kiro CLI doesn't run hooks. There, start a test with `/aximo-test-task`.
+
+## License
 
 Apache License 2.0. See [`LICENSE`](LICENSE).
 
@@ -97,4 +110,3 @@ Apache License 2.0. See [`LICENSE`](LICENSE).
 - Privacy policy: https://autify.com/privacy
 - Support: support@autify.com
 - Issues: https://github.com/autifyhq/autify-kiro-power/issues
-

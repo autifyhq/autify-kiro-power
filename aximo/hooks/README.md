@@ -1,13 +1,12 @@
-# Reference hooks
+# Hooks
 
-Kiro does not load hooks shipped inside a power (kirodotdev/Kiro#9007). The
-`aximo-setup` skill writes this hook into the workspace's `.kiro/hooks/` during set
-up, with Kiro asking the user to confirm the new file. This copy is the reference; copy
-it by hand if you skipped set up.
+Kiro doesn't load hooks that ship inside a power (kirodotdev/Kiro#9007). During setup, the
+`aximo-setup` skill writes this hook into your workspace's `.kiro/hooks/` directory, and
+Kiro asks you to confirm the new file. If you skipped setup, copy the file there yourself.
 
 | File | Trigger | What it does |
 |---|---|---|
-| `aximo-test-on-task-complete.json` | `PostTaskExec` (IDE only) | Asks the agent to run `aximo-test-task` for the task that was just completed. The agent shows the prompt and asks before spending credits. |
+| `aximo-test-on-task-complete.json` | `PostTaskExec` (Kiro IDE only) | Asks the agent to run `aximo-test-task` for the task that just completed. The agent shows you the test and asks before using any credits. |
 
-Not included on purpose: a `PostFileSave` hook. An Aximo run takes minutes; firing one
-per file save would stall the agent loop and burn credits.
+There is no hook that runs on file save. An Aximo test takes a few minutes, so running one
+on every save would slow the agent down and use credits unnecessarily.
