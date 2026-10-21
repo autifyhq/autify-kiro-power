@@ -1,31 +1,24 @@
 # Autify powers for Kiro
 
-Kiro powers that connect [Kiro](https://kiro.dev) to Autify products. Kiro installs one
-power per directory, so this repository holds one directory per product.
+Connect [Kiro](https://kiro.dev) to Autify's testing products. Each power lives in its
+own directory in this repository.
 
-| Power | Directory | Install URL | Status |
-|---|---|---|---|
-| Autify Aximo | [`aximo/`](aximo/) | `https://github.com/autifyhq/autify-kiro-power/tree/main/aximo` | Available |
-| Autify Genesis | not here yet | | Planned (GEN-3003) |
+| Power | What it does | Install URL |
+|---|---|---|
+| [Autify Aximo](aximo/) | Turns your Kiro spec's acceptance criteria into end-to-end browser tests and reports the results in the editor | `https://github.com/autifyhq/autify-kiro-power/tree/main/aximo` |
 
 ## Install a power
 
-In Kiro IDE: Powers panel, **Add Custom Power**, **Import power from GitHub**, paste the
-install URL from the table, **Install**. Importing from a local folder works too: clone
-this repository and pick the power's directory.
+1. In Kiro, open the **Powers** panel and choose **Add Custom Power**.
+2. Choose **Import power from GitHub** and paste the power's install URL from the table above.
+3. Click **Install**.
 
-The repository root holds no `plugin.json`, so pasting the bare repository URL imports
-nothing. The URL has to point at the power's directory.
+Use the power's install URL rather than the repository URL. Kiro looks for the power
+inside its directory.
 
-Each power's own README covers what it does, how to authenticate, and how to try it.
+Each power's README covers setup, authentication, and usage.
 
-## Add a power
-
-One directory per product. Inside it, `plugin.json` at the directory root, the rest of
-the Agent Plugins 1.0 layout beside it, and a README written for the developer installing
-it. Nothing at the repository root needs to change.
-
-## Licence
+## License
 
 Apache License 2.0. See [`LICENSE`](LICENSE).
 
@@ -33,3 +26,4 @@ Apache License 2.0. See [`LICENSE`](LICENSE).
 
 - Privacy policy: https://autify.com/privacy
 - Support: support@autify.com
+- Issues: https://github.com/autifyhq/autify-kiro-power/issues

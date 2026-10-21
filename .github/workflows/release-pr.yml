@@ -1,5 +1,3 @@
-# Keeps one open PR from develop to main, with its commit list current.
-# Merging it is the release: main is the branch Kiro users install from.
 name: Release PR
 
 on:
